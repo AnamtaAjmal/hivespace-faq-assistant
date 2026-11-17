@@ -1,0 +1,254 @@
+{
+  "name": "HiveSpace FAQ Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hive-faq",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6e906c66-cb3d-45ab-b5c9-17f9b89b7bfb",
+      "name": "Webhook",
+      "webhookId": "7537d8b3-6053-42f6-a11a-f90594ed6f43"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "82bfb64f-f5a5-4228-92c3-2236ccd065ce",
+              "name": "customer.question",
+              "value": "={{$json.body.question}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "76b6163b-05c6-4d8d-872f-8b568bb4e8ed",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "10GU6Hzvoa00OQ6ogemtup8nCEjhr-l_HD8CbhZQlzlA",
+          "mode": "list",
+          "cachedResultName": "sample_faq",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10GU6Hzvoa00OQ6ogemtup8nCEjhr-l_HD8CbhZQlzlA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1029492311,
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10GU6Hzvoa00OQ6ogemtup8nCEjhr-l_HD8CbhZQlzlA/edit#gid=1029492311"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        432,
+        0
+      ],
+      "id": "f8e6d718-f1c3-4c05-8ef1-98c27ee2056b",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ewmh4BwTu0NVB4mJ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-goog-api-key",
+              
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"You are a HiveSpace FAQ assistant. Answer the customer's question using only the provided FAQ data. Return JSON containing answer and confidence.\"\n        }\n      ]\n    }\n  ],\n  \"generationConfig\": {\n    \"responseMimeType\": \"application/json\"\n  }\n}\n\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        0
+      ],
+      "id": "1bbdc296-7185-47b1-a063-a6bbfd1a4367",
+      "name": "HTTP Request",
+      "retryOnFail": true,
+      "executeOnce": true,
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst rows = $input.all();\n\nconst faqData = rows.map(item => ({\n  question: item.json.question,\n  answer: item.json.answer\n}));\n\nconst customerQuestion = $('Edit Fields').first().json.customer.question;\n\nreturn [{\n  json: {\n    customer_question: customerQuestion,\n    faq_data: faqData\n  }\n}];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        0
+      ],
+      "id": "48ea4697-8754-4d47-ab3e-3c38f207d8eb",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const answer = $json.answer;\nconst confidence = $json.confidence;\n\nif (confidence < 0.7) {\n  return [{\n    json: {\n      answer: \"I don't know\",\n      confidence: confidence\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    answer: answer,\n    confidence: confidence\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        0
+      ],
+      "id": "6acefee6-75a9-459d-bfe8-d37c8b3535b0",
+      "name": "Confidence check"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      answer: \"HiveSpace offers daily passes and hot desks.\",\n      confidence: 0.8\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "7def0b98-63c3-4f94-836f-45169a67a422",
+      "name": "Mock Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const errorData = $input.first().json;\n\nreturn [{\n  json: {\n    status: \"API Error\",\n    error_message: errorData.error?.message || errorData.message || JSON.stringify(errorData),\n    logged_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        144
+      ],
+      "id": "d260eace-9150-4cb7-ba67-91958127208f",
+      "name": "Error Logger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Mock Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Logger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Response": {
+      "main": [
+        [
+          {
+            "node": "Confidence check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2b2ef225-e952-4c01-b6c5-549858e8f628",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bad921c7d4568c1d3997e72b7244eee4472b3283dab3ada52c13ee6a81c0b05c"
+  },
+  "nodeGroups": [],
+  "id": "BErytg2Vv3YXX1sM",
+  "tags": []
+}
