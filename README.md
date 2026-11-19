@@ -105,6 +105,33 @@ curl -X POST http://localhost:5678/webhook-test/hive-faq -H "Content-Type: appli
 ```
 
 ### 5. Example Response
+### Example 2: Low-Confidence Response and Ticket Creation
+
+**Customer Question:**
+
+`Do you provide helicopter parking for members?`
+
+**Customer Response:**
+
+```json
+{
+  "answer": "I don't know",
+  "confidence": 0.42,
+  "customer_question": "Do you provide helicopter parking for members?"
+}
+```
+
+**Automatic Ticket Creation:**
+
+Because the confidence score (0.42) is below the threshold (0.7), the workflow:
+
+1. Returns "I don't know" to the customer.
+2. Executes the Python ticket creation script.
+3. Creates a timestamped support ticket file in the `tickets` folder.
+
+This fallback prevents the system from presenting an uncertain answer as reliable and records the unanswered question for further support.
+
+*Note: The customer receives the response shown above. Ticket creation happens internally.*
 
 ```json
 {
