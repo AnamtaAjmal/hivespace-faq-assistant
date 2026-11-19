@@ -78,16 +78,14 @@
       "parameters": {
         "method": "POST",
         "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
-              "name": "Content-Type",
-              "value": "application/json"
-            },
-            {
               "name": "x-goog-api-key",
-              "value": "your google api keys"
+              "value": "Google api key"
             }
           ]
         },
@@ -107,6 +105,12 @@
       "retryOnFail": false,
       "executeOnce": true,
       "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "aTN7ojTrbPAAhR9q",
+          "name": "Header Auth account"
+        }
+      },
       "onError": "continueErrorOutput"
     },
     {
@@ -298,7 +302,7 @@
     },
     {
       "parameters": {
-        "command": "=\"C:\\Users\\anamt\\AppData\\Local\\Programs\\Python\\Python313\\python.exe\" \"C:\\Users\\anamt\\Documents\\hivespace-faq-assistant\\ticket_tool.py\" \"{{$json.customer_question}}\""
+        "command": "=\n\"C:\\Users\\anamt\\AppData\\Local\\Programs\\Python\\Python313\\python.exe\" \"C:\\Users\\anamt\\Documents\\hivespace-faq-assistant\\ticket_tool.py\" \"{{$json.customer_question}}\"\n"
       },
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
@@ -367,7 +371,7 @@
       "typeVersion": 2,
       "position": [
         1008,
-        -467.2061538461538
+        -464
       ],
       "id": "dbbf5955-b3fb-49e4-8c66-f34556fc7354",
       "name": "Code in JavaScript1"
@@ -540,7 +544,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "e1ed9def-267e-41d5-a2c6-3af97fb772c5",
+  "versionId": "ebd7f7fc-3197-4bce-9a60-e490a375ce96",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "bad921c7d4568c1d3997e72b7244eee4472b3283dab3ada52c13ee6a81c0b05c"
