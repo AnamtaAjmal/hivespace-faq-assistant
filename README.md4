@@ -1,0 +1,200 @@
+# HiveSpace FAQ Assistant
+
+## Project Overview
+
+HiveSpace FAQ Assistant is an AI-powered customer support automation system built using **n8n, Google Sheets, Google Gemini API, and Python**.
+
+The system automatically receives customer questions through a webhook and checks whether the question matches the available FAQ database.
+
+If a matching FAQ is found, the system returns the correct answer directly. If the question cannot be confidently answered, it creates a support ticket in JSON format for further assistance.
+
+## Features
+
+- Receives customer questions through an n8n Webhook.
+- Retrieves FAQ questions and answers from Google Sheets.
+- Matches exact FAQ questions automatically using JavaScript.
+- Uses Google Gemini API for questions that do not exactly match the FAQ database.
+- Checks answer confidence before responding.
+- Returns "I don't know" when confidence is below the required threshold.
+- Automatically creates support tickets for unanswered questions.
+- Saves tickets as JSON files with timestamps and open status.
+- Logs API errors in Google Sheets.
+
+## Technologies Used
+
+| Technology | Purpose |
+|---|---|
+| n8n | Workflow automation |
+| JavaScript | FAQ matching and confidence checking |
+| Python | Support ticket creation |
+| Google Sheets | FAQ database and error logging |
+| Google Gemini API | AI-based question answering |
+| Webhook | Receives customer questions |
+| GitHub | Project source code and version control |
+
+## Project Structure
+
+```text
+hivespace-faq-assistant/
+│
+├── workflow.json
+├── ticket_tool.py
+├── sample_faq.xlsx
+├── README.md
+│
+└── tickets/
+    └── ticket_YYYYMMDD_HHMMSS.json
+```
+
+## Requirements
+
+Before running the project, install:
+
+- Node.js
+- npm
+- Python 3
+- n8n
+- Google account
+- Google Gemini API key
+
+## Installation and Setup
+
+### 1. Clone the Repository
+
+Open Command Prompt and run:
+
+```bash
+git clone https://github.com/AnamtaAjmal/hivespace-faq-assistant.git
+```
+
+Move into the project directory:
+
+```bash
+cd hivespace-faq-assistant
+```
+
+### 2. Start n8n
+
+Run:
+
+```bash
+npx n8n
+```
+
+Open the following URL in your browser:
+
+```text
+http://localhost:5678
+```
+
+### 3. Import the Workflow
+
+1. Open n8n.
+2. Click the three-dot menu.
+3. Select Import from File.
+4. Choose `workflow.json`.
+5. Open the imported workflow.
+
+### 4. Configure Credentials
+
+Configure the following credentials inside n8n:
+
+- Google Sheets OAuth2 credentials.
+- Google Gemini API key.
+
+Enable the required Google Sheets and Google Drive APIs in Google Cloud.
+
+**Security Note:** Store API keys and credentials securely in n8n. Never upload private API keys or OAuth client secrets to GitHub.
+
+### 5. Configure Google Sheets
+
+Upload `sample_faq.xlsx` to Google Drive and open it using Google Sheets.
+
+Configure the Google Sheets nodes to use the correct spreadsheet and worksheet.
+
+The spreadsheet contains FAQ questions and answers. An additional `ErrorLogs` worksheet can be used for API error logging.
+
+## Running the Project
+
+1. Start n8n using `npx n8n`.
+2. Open the imported workflow.
+3. Click Execute Workflow to listen for a test webhook request.
+4. Send a customer question using the webhook.
+
+Example:
+
+```bash
+curl -X POST http://localhost:5678/webhook-test/hive-faq \
+-H "Content-Type: application/json" \
+-d "{\"question\":\"What are your membership plans?\"}"
+```
+
+## Support Ticket Creation
+
+The Python script `ticket_tool.py` creates a support ticket when a customer question cannot be answered confidently.
+
+Run the script manually:
+
+```bash
+python ticket_tool.py "I need help with membership"
+```
+
+A JSON ticket is automatically created inside the `tickets` folder.
+
+Example ticket:
+
+```json
+{
+    "query": "I need help with membership",
+    "status": "open",
+    "created_at": "2026-11-19T12:30:57+00:00"
+}
+```
+
+## Testing
+
+### Test Case 1: Known FAQ Question
+
+**Input:**
+
+```text
+What are your membership plans?
+```
+
+**Expected Result:**
+
+Returns the matching FAQ answer:
+
+"HiveSpace offers flexible membership options, including daily passes, hot desks, and dedicated desks. Please contact the team for current prices and availability."
+
+Confidence: 0.95
+
+### Test Case 2: Unknown Question
+
+**Input:**
+
+```text
+Can you provide a special service that is not listed in your FAQs?
+```
+
+**Expected Result:**
+
+- The system attempts to answer using Gemini.
+- If the confidence is below 0.7, a support ticket is created.
+- The ticket is saved as a JSON file in the `tickets` folder.
+
+## Demo Video
+
+YouTube Demo: [Add your Unlisted YouTube Video Link Here]
+
+## GitHub Repository
+
+[HiveSpace FAQ Assistant](https://github.com/AnamtaAjmal/hivespace-faq-assistant)
+
+## Author
+
+Software Engineering Student
+
+Project: HiveSpace FAQ Assistant
+
+Internship: Ezitech Software House
