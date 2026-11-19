@@ -1,118 +1,151 @@
 # HiveSpace FAQ Assistant
 
 ## Project Overview
-HiveSpace FAQ Assistant is an AI-powered customer support automation system built using n8n, Google Sheets, and Google Gemini API. It automatically answers customer questions using stored FAQs and creates support tickets when it cannot confidently answer a question.
 
-## Features
-- Receives customer questions through a Webhook.
-- Retrieves FAQ data from Google Sheets.
-- Matches customer questions with existing FAQs.
-- Uses Google Gemini AI to generate answers for questions that do not have an exact FAQ match.
-- Checks answer confidence before responding.
-- Automatically creates a support ticket when confidence is below 0.7.
-- Saves tickets as JSON files inside the `tickets` folder.
-- Logs API errors in Google Sheets.
-- Sends responses back to customers through the Webhook.
+HiveSpace FAQ Assistant is an AI-powered customer support automation system built using n8n. It helps customers get answers to frequently asked questions about HiveSpace services.
+
+The system checks customer questions against stored FAQ data in Google Sheets. If an exact match is found, it returns the stored answer. If no exact match is found, it uses Google's Gemini AI to generate a response.
+
+If the AI confidence score is below 0.7, the system automatically creates a support ticket using a Python script.
 
 ## Technologies Used
-- n8n – Workflow automation
-- Python – Ticket creation tool
-- Google Sheets – FAQ storage and error logging
-- Google Gemini API – AI-powered responses
-- JavaScript – Data processing and confidence checking
-- JSON – Ticket storage and workflow export
 
-## Project Structure
+- **n8n:** Workflow automation
+- **Google Sheets:** FAQ database and error logging
+- **Google Gemini API:** AI-powered responses
+- **Python:** Automatic support ticket creation
+- **JavaScript:** FAQ matching and response processing
+- **Webhook:** Receives customer questions
+
+## Workflow Features
+
+1. Receives customer questions through a POST webhook.
+2. Retrieves FAQ records from Google Sheets.
+3. Checks whether the question exactly matches an existing FAQ.
+4. Returns the stored answer when an exact match is found.
+5. Sends unmatched questions to Google Gemini.
+6. Processes the AI response and checks its confidence score.
+7. Creates a support ticket if confidence is below 0.7.
+8. Logs HTTP Request errors in Google Sheets.
+9. Returns the final response to the customer.
+
+## Workflow Structure
 
 ```text
-hivespace-faq-assistant/
-│
-├── workflow.json
-├── ticket_tool.py
-├── README.md
-│
-└── tickets/
-    └── ticket_YYYYMMDD_HHMMSS.json
+Webhook
+   |
+Edit Fields
+   |
+Get FAQ Data from Google Sheets
+   |
+FAQ Matching (JavaScript)
+   |
+Exact Match Check
+   |
+   |-- Exact Match --> Return FAQ Answer
+   |
+   |-- No Match --> Gemini API
+                       |
+                 Parse AI Response
+                       |
+                 Confidence Check
+                       |
+                    IF Node
+                   /       \
+            Below 0.7     0.7 or Above
+                |              |
+          Execute Command   Return Answer
+                |
+          Create Ticket
+                |
+          Return Response
 ```
 
-## Requirements
-- Python 3
-- Node.js and npm
-- n8n
+## Project Setup
+
+### 1. Requirements
+
+- n8n installed on your computer
+- Python installed
 - Google account
+- Google Sheets FAQ database
 - Google Gemini API key
-
-## Installation and Setup
-
-### 1. Install n8n
-
-Install Node.js, then run:
-
-```bash
-npx n8n
-```
-
-Open n8n in your browser:
-
-```text
-http://localhost:5678
-```
 
 ### 2. Import the Workflow
 
 1. Open n8n.
-2. Import `workflow.json`.
-3. Configure your Google Sheets credentials.
-4. Configure your Gemini API credentials.
-5. Verify the file path in the Execute Command node.
+2. Import the `workflow.json` file.
+3. Open the Google Sheets nodes.
+4. Connect your Google Sheets account.
+5. Open the HTTP Request node.
+6. Configure the Header Auth credential with your Gemini API key.
 
-### 3. Run the Python Ticket Tool
+**API Key Security:** The Gemini API key is stored in n8n credentials and should never be added directly to the workflow JSON or uploaded to GitHub.
 
-Open CMD in the project folder and run:
+### 3. Python Ticket Tool Setup
 
-```bash
-python ticket_tool.py "I need help with membership"
+The project includes a Python script named `ticket_tool.py`.
+
+The Execute Command node runs this script when the AI confidence score is below 0.7.
+
+**Important:** The Execute Command currently uses local Windows paths:
+
+```cmd
+"C:\Users\anamt\AppData\Local\Programs\Python\Python313\python.exe" "C:\Users\anamt\Documents\hivespace-faq-assistant\ticket_tool.py" "{{$json.customer_question}}"
 ```
 
-The script automatically creates a `tickets` folder if it does not exist and saves a JSON ticket containing:
+These paths are specific to the developer's computer. If you run this project on another computer, update the Python executable path and project folder path according to your system.
 
-- Customer query
-- Ticket status
-- Creation timestamp
+### 4. Test the Workflow
 
-## Workflow Execution
+Start the workflow in n8n and use the test webhook.
 
-1. Customer sends a question to the Webhook.
-2. The workflow retrieves FAQ records from Google Sheets.
-3. JavaScript checks for an exact FAQ match.
-4. If an exact match exists, the stored answer is returned.
-5. Otherwise, Gemini AI processes the question.
-6. The Confidence Check evaluates the AI response.
-7. If confidence is below 0.7, the Execute Command node runs `ticket_tool.py`.
-8. A support ticket is saved as a JSON file.
-9. The customer receives a response.
+```cmd
+curl -X POST http://localhost:5678/webhook-test/hive-faq -H "Content-Type: application/json" -d "{\"question\":\"Can I book a meeting room?\"}"
+```
 
-## Testing
+### 5. Example Response
 
-**Test 1: Known FAQ**
+```json
+{
+  "answer": "Yes. Members can book meeting rooms subject to availability. Contact the front desk or use the booking process provided by HiveSpace.",
+  "confidence": 0.95,
+  "customer_question": "Can I book a meeting room?"
+}
+```
 
-Send a question that exists in Google Sheets.
+## Support Ticket Automation
 
-Expected result: The assistant returns the matching FAQ answer.
+When Gemini returns a confidence score below 0.7, the workflow executes the Python ticket tool.
 
-**Test 2: Unknown FAQ**
+The script creates a ticket file in the project's `tickets` folder.
 
-Send a question that is not available in Google Sheets.
+## Error Handling
 
-Expected result: Gemini processes the question. If confidence is below 0.7, a support ticket is automatically created.
+If the Gemini HTTP Request fails, the workflow sends the error details to an Error Logger node and appends the information to Google Sheets.
 
-## Security
-- Keep API keys private.
-- Do not upload API keys or passwords to GitHub.
-- Configure credentials securely inside n8n.
+## Project Files
+
+```text
+hivespace-faq-assistant/
+|
+|-- workflow.json
+|-- ticket_tool.py
+|-- README.md
+|-- tickets/
+```
+
+## Security Notes
+
+- Never upload API keys or passwords to GitHub.
+- Use n8n credentials for API authentication.
+- Keep credentials private.
+- Update local file paths before running the workflow on another computer.
 
 ## Author
+
 Software Engineering Student
 
-**Project:** HiveSpace FAQ Assistant  
-**Purpose:** AI-powered FAQ automation and support ticket creation.
+## Project Purpose
+
+This project demonstrates AI integration, workflow automation, FAQ management, API integration, error handling, and automated support ticket generation.
